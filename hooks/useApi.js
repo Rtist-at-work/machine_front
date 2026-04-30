@@ -6,11 +6,11 @@ import { Platform } from "react-native";
 import { Toast } from "toastify-react-native"; // ✅ replaced
 
 const useApi = () => {
-   const API_URL =
-    Platform.OS === "web"
-      ? "http://localhost:5000"
-      : "http://192.168.1.8:5000";
-  // const API_URL = "https://api.machinestreets.com";
+  //  const API_URL =
+  //   Platform.OS === "web"
+  //     ? "http://localhost:5000"
+  //     : "http://192.168.1.8:5000";
+  const API_URL = "https://api.machinestreets.com";
   const { startLoading, stopLoading } = useAppContext();
 
   const handleRequest = async (request) => {

@@ -1,4 +1,3 @@
-import BusinessCard from "@/components/BusinessCards/BusinessCard3";
 import Footer from "@/components/Footer";
 import useScreenWidth from "@/hooks/useScreenWidth";
 import {

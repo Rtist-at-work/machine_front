@@ -47,8 +47,8 @@ export const AppProvider = ({ children }) => {
 
       // ✅ initialize socket
       newSocket = io(
-        // "https://api.machinestreets.com",
-        "http://192.168.1.8:5000",
+        "https://api.machinestreets.com",
+        // "http://192.168.1.8:5000",
         {
           transports: ["websocket", "polling"],
           reconnection: true,

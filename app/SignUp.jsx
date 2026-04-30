@@ -164,7 +164,7 @@ const SignUp = () => {
   );
   const fetchCoordinatesWeb = async (address) => {
     const res = await fetch(
-      `http://localhost:5000/api/geocode?address=${encodeURIComponent(
+      `https://api.machinestreets.com/api/geocode?address=${encodeURIComponent(
         address
       )}`
     );

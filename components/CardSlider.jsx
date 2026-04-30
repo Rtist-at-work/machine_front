@@ -59,7 +59,7 @@ export default function CardSlider({ userDetails,onClose }) {
     try {
       if (!cards[index]) return;
 
-      const imageUrl = `http://192.168.1.8:5000/api/mediaDownload/${cards[index]}`;
+      const imageUrl = `https://api.machinestreets.com/api/mediaDownload/${cards[index]}`;
 
       // ✅ WEB DOWNLOAD
       if (Platform.OS === "web") {

@@ -32,8 +32,8 @@ const QrModal = ({ visible, onClose, getItem }) => {
             style={styles.link}
             onPress={async () => {
               const userId = await getItem("userId");
-              const url = `http://127.0.0.1:5500/index.html?user=${userId}`;
-              // const url = `https://faceqrapp.netlify.app/?user=${userId}`;
+              // const url = `http://127.0.0.1:5500/index.html?user=${userId}`;
+              const url = `https://faceqrapp.netlify.app/?user=${userId}`;
               Linking.openURL(url);
             }}
           >
