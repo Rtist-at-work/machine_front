@@ -142,9 +142,9 @@ const ProfilePageHeader = ({
               <View className="flex-row items-center ">
                 {/* Followers */}
                 <Pressable
-                  onPress={() =>
-                    router.push(`/followers/${selectedMechanic?._id}`)
-                  }
+                  // onPress={() =>
+                  //   router.push(`/followers/${selectedMechanic?._id}`)
+                  // }
                   className=" items-center"
                 >
                   <Text
