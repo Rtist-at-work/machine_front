@@ -1,41 +1,55 @@
+// child components
 import Filter from "@/components/FIlter";
 import Header from "@/components/Header";
 import UserCard from "@/components/UserCard";
+import SelectedFilter from "../FIlter/SelectedFIlters";
+
+// Modals
+import ServiceModal from "../HomePage/ServiceModal";
+import QrModal from "../HomePage/QrModal";
+import Modal_R from "../HomePage/Modal_R";
+
+// Loading Component
+
+import Loading from "@/components/Loading";
+
+// context
+
 import { useAppContext } from "@/context/AppContext";
+
+// hooks
+
+import { useLocation } from "@/context/LocationContext";
 import useApi from "@/hooks/useApi";
 import useScreenWidth from "@/hooks/useScreenWidth";
-import { useMemo } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+
+// react native
 import {
   Animated,
   FlatList,
   Platform,
   Pressable,
+  RefreshControl,
   Text,
   View,
 } from "react-native";
+
+// react
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// icon
+
 import Ionicons from "@expo/vector-icons/Ionicons";
-import SelectedFilter from "../FIlter/SelectedFIlters";
-import ServiceModal from "../HomePage/ServiceModal";
-import Modal_R from "../HomePage/Modal_R";
-import QrModal from "../HomePage/QrModal";
+
+// others
+
 import * as SecureStore from "expo-secure-store";
-import Loading from "@/components/Loading";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useLocation } from "@/context/LocationContext";
-import { RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const HomePage = () => {
-  const [filterItems, setFilterItems] = useState({
-    selectedCategory: null,
-    selectedIndustry: null,
-    selectedSubCategory: [],
-    selectedServices: null,
-    selectedRating: null,
-    selectedDistrict: [],
-  });
-
+  // context
   const {
     userDetails,
     setUserDetails,
@@ -46,98 +60,93 @@ const HomePage = () => {
     filterData,
     setFIlterData,
     socketInit,
+    startLoading,
+    userId
   } = useAppContext();
+
+  // hooks
   const { isDesktop, width, isTablet, isMobile, height } = useScreenWidth();
   const { getJsonApi, postJsonApi } = useApi();
-
   const { geoCoords, status } = useLocation();
+
+  // refs
+  const cache = useRef({}); // cache object
+
+  // ============== States =====================
+
+  // schema states
+  const [filterItems, setFilterItems] = useState({
+    selectedCategory: null,
+    selectedIndustry: null,
+    selectedSubCategory: [],
+    selectedServices: null,
+    selectedRating: null,
+    selectedDistrict: [],
+  });
 
   const [review, setReview] = useState({
     star: null,
     reviewText: null,
     userId: null,
   });
-  const cache = useRef({}); // cache object
+
+  // searchbar states
   const [searchBarValue, setSearchBarValue] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const slideAnim = useState(new Animated.Value(-width))[0]; // start off-screen left
-  const selectedFIlterAnim = useRef(new Animated.Value(0)).current;
 
-  const [isOpen, setIsOpen] = useState(Platform.OS === "web" && width > 1024);
-  const [shouldRenderFilter, setShouldRenderFilter] = useState(isOpen);
+  // filter states
+  const [isFilterOpen, setIsFilterOpen] = useState(
+    Platform.OS === "web" && isDesktop,
+  );
+  const [shouldRenderFilter, setShouldRenderFilter] = useState(isFilterOpen);
 
+  // Modal states
   const [serviceModal, setServiceModal] = useState(false);
   const [reviewModal, setReviewModal] = useState(null);
   const [qr, setQr] = useState(true);
-  // const [role, setRole] = useState(null);
+
+  // Pagination States
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(2);
 
-  const [refreshing, setRefreshing] = useState(false);
+  // Animation States
+  const slideAnim = useState(new Animated.Value(-width))[0]; // start off-screen left
+  const selectedFIlterAnim = useRef(new Animated.Value(0)).current;
 
-  const getItem = async (key) => {
-    if (Platform.OS === "web") {
-      return localStorage.getItem(key);
-    } else {
-      return await SecureStore.getItemAsync(key);
+  // refresh State
+  const [refreshing, setRefreshing] = useState(false);
+  // const [role, setRole] = useState(null);
+
+  // =============== Api Functions =================
+
+  // search api
+  const fetchSearchResult = async (page) => {
+    const queryKey = `${searchBarValue}_${page}`; // unique cache key per query+page
+
+    // ✅ Check cache first
+    if (cache.current[queryKey]) {
+      setSearchResults(cache.current[queryKey]);
+      return;
+    }
+
+    try {
+      const data = await getJsonApi(
+        `api/search?searchQuery=${searchBarValue}&page=${page}`,
+        "application/json",
+        { secure: true },
+      );
+      if (data.status === 200) {
+        const results = data?.data?.searchResults || [];
+        cache.current[queryKey] = results; // ✅ Save in cache
+        setSearchResults(results);
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
-  // remove: const mechanicsCache = useRef(null);
 
-  const getmechanics = useCallback(
-    async (reset, currentPage) => {
-      try {
-        if (!geoCoords) return;
-
-        const result = await getJsonApi(
-          `homepage/getmechanics/?page=${currentPage}&limit=50&lat=${
-            geoCoords?.latitude || 0
-          }&long=${geoCoords?.longitude || 0}`,
-          "application/json",
-          { secure: true },
-        );
-
-        if (result?.status === 200) {
-          setTotalPages(result?.data?.totalPages);
-          if (currentPage === 1) {
-           
-            setUserDetails(result?.data?.userData || []);
-          } else {
-            setUserDetails((prev) => [
-              ...(prev || []),
-              ...(result?.data?.userData || []),
-            ]);
-          }
-          setFIlterData(result?.data?.filterData);
-          setQr(result.data.qr);
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    [geoCoords, page],
-  );
-
-  const onRefresh = useCallback(async () => {
-    setPage(1);
-    setRefreshing(true);
-    await getmechanics(true, 1); // refresh list
-    setRefreshing(false);
-  }, [getmechanics]);
-
-  useEffect(() => {
-    socketInit();
-    if (geoCoords) {
-      console.log("geo");
-      getmechanics(true, 1);
-    }
-  }, [geoCoords]); // run again once location is ready
-
-  console.log("page outside: ", page);
-  console.log("totalpage as:", totalPages);
-
-  // post review
+  // review submission
 
   const postReview = useCallback(async () => {
     try {
@@ -163,43 +172,50 @@ const HomePage = () => {
     }
   }, [review, postJsonApi]);
 
-  // filter animation
-  useEffect(() => {
-    if (isOpen) {
-      setShouldRenderFilter(true);
-    }
+  // fetch Mechanics
+  const getmechanics = useCallback(
+    async (reset,currentPage) => {
+      try {
+        if (!geoCoords) return;
+        
+        const result = await getJsonApi(
+          `homepage/getmechanics/?page=${currentPage}&limit=50&lat=${
+            geoCoords?.latitude || 0
+          }&long=${geoCoords?.longitude || 0}`,
+          "application/json",
+          { secure: true },
+        );
 
-    Animated.timing(slideAnim, {
-      toValue: isOpen ? 0 : -width,
-      duration: 400,
-      useNativeDriver: false,
-    }).start(() => {
-      if (!isOpen) {
-        setShouldRenderFilter(false);
+        if (result?.status === 200) {
+          setTotalPages(result?.data?.totalPages);
+          if (currentPage === 1 || reset) {
+            setUserDetails(result?.data?.userData || []);
+          } else {
+            setUserDetails((prev) => [
+              ...(prev || []),
+              ...(result?.data?.userData || []),
+            ]);
+          }
+          setFIlterData(result?.data?.filterData);
+          setQr(result.data.qr);
+        }
+      } catch (err) {
+        console.log(err);
       }
-    });
-  }, [isOpen]);
+    },
+    [geoCoords, page],
+  );
 
-  // selected filter animation
-  useEffect(() => {
-    if (
-      Object.values(filterItems).some((val) =>
-        Array.isArray(val) ? val.length > 0 : val !== null,
-      )
-    ) {
-      Animated.timing(selectedFIlterAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: false,
-      }).start();
+  // ===============  Functions =====================
+
+  // getting tokens/cookies
+  const getItem = async (key) => {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key);
     } else {
-      Animated.timing(selectedFIlterAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: false,
-      }).start();
+      return await SecureStore.getItemAsync(key);
     }
-  }, [filterItems]);
+  };
 
   // filter mechanics
 
@@ -273,32 +289,63 @@ const HomePage = () => {
     filterItems.otherThanIndia,
   ]);
 
-  // search api
+  // page refresh
 
-  const fetchSearchResult = async (page) => {
-    const queryKey = `${searchBarValue}_${page}`; // unique cache key per query+page
+  const onRefresh = useCallback(async () => {
+    setPage(1);
+    setRefreshing(true);
+    await getmechanics(true, 1); // refresh list
+    setRefreshing(false);
+  }, [getmechanics]);
 
-    // ✅ Check cache first
-    if (cache.current[queryKey]) {
-      setSearchResults(cache.current[queryKey]);
-      return;
+  //  ================== useEffects =================
+
+  useEffect(() => {
+    startLoading();
+    socketInit();
+    if (geoCoords) {
+      getmechanics(true, 1);
+    }
+  }, [geoCoords]); // run again once location is ready
+
+  // filter animation
+  useEffect(() => {
+    if (isFilterOpen) {
+      setShouldRenderFilter(true);
     }
 
-    try {
-      const data = await getJsonApi(
-        `api/search?searchQuery=${searchBarValue}&page=${page}`,
-        "application/json",
-        { secure: true },
-      );
-      if (data.status === 200) {
-        const results = data?.data?.searchResults || [];
-        cache.current[queryKey] = results; // ✅ Save in cache
-        setSearchResults(results);
+    Animated.timing(slideAnim, {
+      toValue: isFilterOpen ? 0 : -width,
+      duration: 400,
+      useNativeDriver: false,
+    }).start(() => {
+      if (!isFilterOpen) {
+        setShouldRenderFilter(false);
       }
-    } catch (err) {
-      console.log(err);
+    });
+  }, [isFilterOpen]);
+
+  // selected filter animation
+  useEffect(() => {
+    if (
+      Object.values(filterItems).some((val) =>
+        Array.isArray(val) ? val.length > 0 : val !== null,
+      )
+    ) {
+      Animated.timing(selectedFIlterAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(selectedFIlterAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: false,
+      }).start();
     }
-  };
+  }, [filterItems]);
+
   // debounce the query to api
   useEffect(() => {
     if (searchBarValue?.length >= 3) {
@@ -311,7 +358,7 @@ const HomePage = () => {
       setSearchResults([]);
     }
   }, [searchBarValue]);
-console.log(filteredMechanics)
+
   return (
     <GestureHandlerRootView>
       <SafeAreaView
@@ -319,84 +366,41 @@ console.log(filteredMechanics)
         style={{ flex: 1, backgroundColor: "#e5e7eb" }}
       >
         {/* header */}
-        {(reviewModal === "read" || reviewModal === "write") && (
-          <Modal_R
-            isTablet={isTablet}
-            isDesktop={isDesktop}
-            isMobile={isMobile}
-            height={height}
-            setReviewModal={setReviewModal}
-            selectedMechanic={selectedMechanic}
-            width={width}
-            review={review}
-            setReview={setReview}
-            postReview={postReview}
-            reviewModal={reviewModal}
-          />
-        )}
         <Header
-          isOpen={isOpen}
+          isFilterOpen={isFilterOpen}
           searchBarValue={searchBarValue}
           setSearchBarValue={setSearchBarValue}
         />
-
         {/* filter icon */}
-        {width <= 1024 && (
-          <Pressable onPress={() => setIsOpen(true)} className="mt-4 ml-3">
+        {!isDesktop && (
+          <Pressable
+            onPress={() => setIsFilterOpen(true)}
+            className="mt-4 ml-3"
+          >
             <Ionicons name="filter-outline" size={40} color="black" />
           </Pressable>
         )}
 
-        <View className="flex-row w-full flex-1 ">
-          {/* filter component */}
-          {(width > 1024 || isOpen) && (
-            <View
-              style={{
-                height: "100%",
-                position: width <= 1024 ? "absolute" : "relative",
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-                width: isTablet
-                  ? "40%"
-                  : width > 1024
-                    ? "20%"
-                    : isMobile
-                      ? "100%"
-                      : null,
-                zIndex: 999,
-                paddingHorizontal: 8,
-                paddingVertical: 8,
-                backgroundColor: "#fff",
-                elevation: 10,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 3.84,
-                overflow: "hidden",
-              }}
-            >
-              <Filter
-                isOpen={isOpen}
-                setIsOpen={setIsOpen}
-                isDesktop={isDesktop}
-                filterData={filterData}
-                filterItems={filterItems}
-                setFilterItems={setFilterItems}
-                width={width}
-              />
-            </View>
-          )}
+        {/* =================== Main content =================== */}
 
-          {qr === false && userRole === "mechanic" && (
-            <QrModal
-              visible={true}
-              onClose={() => setQr(true)}
-              getItem={getItem}
+        <View className="flex-row w-full flex-1">
+          {/* filter */}
+          {(isDesktop || isFilterOpen) && (
+            <Filter
+              isDesktop={isDesktop}
+              isMobile={isMobile}
+              isTablet={isTablet}
+              // open state
+              isFilteOpen={isFilterOpen}
+              setIsFilterOpen={setIsFilterOpen}
+              // filter data
+              filterData={filterData}
+              filterItems={filterItems}
+              setFilterItems={setFilterItems}
             />
           )}
-          {/* userDetails */}
+
+          {/* userCards */}
 
           <View
             className={`flex-1 ${
@@ -432,6 +436,7 @@ console.log(filteredMechanics)
                     setSelectedMechanic={setSelectedMechanic}
                     setReviewModal={setReviewModal}
                     setReview={setReview}
+                    userId={userId}
                   />
                 </View>
               )}
@@ -476,7 +481,7 @@ console.log(filteredMechanics)
                 <View className="flex-1 justify-center items-center">
                   {isLoading && page === 1 ? (
                     <Loading />
-                  ) : userDetails.length > 0 ? (
+                  ) : userDetails.length === 0 ? (
                     <Text className="text-gray-500 text-lg font-semibold">
                       No Data Found
                     </Text>
@@ -499,7 +504,9 @@ console.log(filteredMechanics)
                       disabled={isLoading}
                     >
                       {isLoading ? (
-                        <Loading bgColor="#2095A2" gearColor="#ffffffff" />
+                        <Text className="text-white w-full font-bold text-center">
+                          Loading...
+                        </Text>
                       ) : (
                         <Text className="text-white w-full font-bold text-center">
                           Load more
@@ -513,6 +520,34 @@ console.log(filteredMechanics)
             />
           </View>
         </View>
+
+        {/* ========== Modals =========== */}
+
+        {(reviewModal === "read" || reviewModal === "write") && (
+          <Modal_R
+            isTablet={isTablet}
+            isDesktop={isDesktop}
+            isMobile={isMobile}
+            height={height}
+            setReviewModal={setReviewModal}
+            selectedMechanic={selectedMechanic}
+            width={width}
+            review={review}
+            setReview={setReview}
+            postReview={postReview}
+            reviewModal={reviewModal}
+            userId={userId}
+          />
+        )}
+
+        {qr === false && userRole === "mechanic" && (
+          <QrModal
+            visible={true}
+            onClose={() => setQr(true)}
+            getItem={getItem}
+          />
+        )}
+
         {/* service display modal */}
         {serviceModal && (
           <ServiceModal

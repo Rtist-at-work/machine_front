@@ -62,10 +62,11 @@ const DesktopPostViewer = memo((props) => {
     setShowHeart(true);
     handleTap(item);
   }, [handleTap, item]);
-
+ 
   /* ===========================
      RENDER
   =========================== */
+
   return (
     <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)" }}>
       <View

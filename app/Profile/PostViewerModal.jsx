@@ -74,8 +74,7 @@ const PostViewerModal = ({
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300; // ms
     if (lastTap.current && now - lastTap.current < DOUBLE_PRESS_DELAY) {
-      console.log(item.likes);
-      console.log(userId);
+
       if (!item.likes.includes(userId)) {
         setSelectedMechanic((prev) =>
           prev
@@ -99,7 +98,6 @@ const PostViewerModal = ({
       lastTap.current = now;
       setTimeout(() => {
         if (lastTap.current === now) {
-          console.log("Single Tap");
           lastTap.current = null;
         }
       }, DOUBLE_PRESS_DELAY);
@@ -109,7 +107,7 @@ const PostViewerModal = ({
   const goPrev = () =>
     setPostModal((prev) => (prev < user.posts.length - 1 ? prev + 1 : prev));
   const goNext = () => setPostModal((prev) => (prev > 0 ? prev - 1 : prev));
-  console.log("pvm :", type);
+  
   return (
     <SafeAreaView className="z-50 flex-1 ">
       {/* Desktop close button */}

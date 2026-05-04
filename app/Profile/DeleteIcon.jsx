@@ -3,7 +3,6 @@ import FadeSlideView from "@/components/FadeSlideView";
 import { Pressable, Text } from "react-native";
 
 const DeleteIcon = ({deleteIcon,type,item,postDelete,setDeleteIcon,isDesktop}) => {
-  console.log('type ;', type)
   return (
     <>
       {deleteIcon === item?._id && (

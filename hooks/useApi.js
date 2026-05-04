@@ -33,16 +33,14 @@ const useApi = () => {
       if (err?.response?.status === 401) {
         router.replace("/SignUp");
       }
-
-      console.log("err :", err);
+   
       const errorMessage =
         err.response?.data?.message ||
         "server error";
-
       const description =
         err.response?.data?.description ||
         "Please try agin later";
-
+      console.log(errorMessage && typeof errorMessage === "string", 'kl')
       if (errorMessage && typeof errorMessage === "string") {
         Toast.error(errorMessage, {
           description,

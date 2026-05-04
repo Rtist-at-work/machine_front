@@ -26,6 +26,7 @@ export const AppProvider = ({ children }) => {
 
   let newSocket;
   const socketInit = async () => {
+
     try {
       let storedToken;
       let storedUserId;
@@ -72,7 +73,6 @@ export const AppProvider = ({ children }) => {
 
       // // likes updation
       newSocket.on("comment-update", (updatedPost) => {
-        console.log("updated comment :", updatedPost);
         setSelectedMechanic((prev) =>
           prev
             ? {

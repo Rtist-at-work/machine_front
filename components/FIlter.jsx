@@ -5,9 +5,10 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
 const Filter = ({
-  width,
-  setIsOpen,
+  setIsFilterOpen,
+  isMobile,
   isDesktop,
+  isTablet,
   page = "mech",
   filterData,
   filterItems,
@@ -58,21 +59,41 @@ const Filter = ({
     };
   };
 
-
   return (
+    // <View
+    //   className={`bg-gray-100 rounded-md p-3 shadow-md overflow-hidden   ${
+    //     !isDesktop ? "z-50 flex-col max-w-[100vw] flex-1" : "flex-col h-full"
+    //   }`}
+    // >
     <View
-      className={`bg-gray-100 rounded-md p-3 shadow-md overflow-hidden   ${
-        !isDesktop ? "z-50 flex-col max-w-[100vw] flex-1" : "flex-col h-full"
-      }`}
+      style={{
+        height: "100%",
+        position: !isDesktop ? "absolute" : "relative",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: isTablet ? "40%" : isDesktop ? "20%" : isMobile ? "100%" : null,
+        zIndex: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        backgroundColor: "#fff",
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        overflow: "hidden",
+      }}
     >
       {/* Close icon on mobile */}
-      {width <= 1024 && (
+      {!isDesktop && (
         <View className="w-full items-end mb-2">
           <MaterialIcons
             name="cancel"
             size={24}
             color="red"
-            onPress={() => setIsOpen(false)}
+            onPress={() => setIsFilterOpen(false)}
           />
         </View>
       )}
@@ -114,7 +135,10 @@ const Filter = ({
                 Select State
               </Text>
 
-              <ScrollView className={`${filterItems?.selectedState?.length > 0 ? "h-48" : "h-full"} mt-2`} nestedScrollEnabled>
+              <ScrollView
+                className={`${filterItems?.selectedState?.length > 0 ? "h-48" : "h-full"} mt-2`}
+                nestedScrollEnabled
+              >
                 {filterItems?.selectedState?.length > 0 ? (
                   <Pressable
                     onPress={() =>
@@ -167,14 +191,14 @@ const Filter = ({
                       ?.find(
                         (d) =>
                           d?.region?.toLowerCase().trim() ===
-                          filterItems?.selectedState.toLowerCase().trim()
+                          filterItems?.selectedState.toLowerCase().trim(),
                       )
                       ?.district?.map((district) => (
                         <Pressable
                           key={district}
                           onPress={() =>
                             setFilterItems((prev) =>
-                              toggleDistrictSelection(prev, district)
+                              toggleDistrictSelection(prev, district),
                             )
                           }
                           className={`p-2 rounded-md mb-1 ${
@@ -290,7 +314,8 @@ const Filter = ({
                     </Text>
                     {filterData?.industryData
                       ?.find(
-                        (item) => item.industry === filterItems.selectedIndustry
+                        (item) =>
+                          item.industry === filterItems.selectedIndustry,
                       )
                       ?.category?.map((cat) => (
                         <Pressable
@@ -339,7 +364,7 @@ const Filter = ({
                         key={sub}
                         onPress={() =>
                           setFilterItems((prev) =>
-                            toggleSelectedSubCategory(prev, sub)
+                            toggleSelectedSubCategory(prev, sub),
                           )
                         }
                         className={`p-2 mb-2 rounded-md ${

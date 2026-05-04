@@ -23,6 +23,7 @@ import * as SecureStore from "expo-secure-store";
 import { useLocation } from "@/context/LocationContext";
 import * as Location from "expo-location";
 import PermissionModal from "./SignUp/PermissionModal";
+import AppToast from "@/components/Toast";
 
 // const { width, height } = Dimensions.get("window");
 
@@ -70,81 +71,201 @@ const SignUp = () => {
 
   // validation check
 
+  // const checkEmptyFields = useCallback(() => {
+  //   const { role, username, password, confirmPassword } = userDetails;
+
+  //   for (const key in userDetails) {
+  //     const value = userDetails[key];
+
+  //     // ✅ skip optional fields
+  //     if (["lat", "lon"].includes(key)) continue;
+
+  //     if (typeof value === "string" && !value.trim()) {
+  //       if (
+  //         (role === "recruiter" &&
+  //           !["password", "confirmPassword"].includes(key)) ||
+  //         (userDetails.country.toLowerCase().trim() !== "india" &&
+  //           !userDetails.city)
+  //       )
+  //         continue;
+
+  //       showError(key);
+  //       return false;
+  //     }
+
+  //     if (
+  //       typeof value === "object" &&
+  //       value !== null &&
+  //       !Array.isArray(value)
+  //     ) {
+  //       for (const innerKey in value) {
+  //         const innerValue = value[innerKey];
+
+  //         if (typeof innerValue === "string" && !innerValue.trim()) {
+  //           if (
+  //             role === "recruiter" &&
+  //             key !== "mobile" &&
+  //             !["number", "countryCode"].includes(innerKey)
+  //           )
+  //             continue;
+
+  //           showError(innerKey, key);
+  //           return false;
+  //         }
+  //       }
+  //     }
+
+  //     if (role === "mechanic" && Array.isArray(value)) {
+  //       if (value.some((val) => typeof val === "string" && !val.trim())) {
+  //         showError(key, null, true);
+  //         return false;
+  //       }
+  //     }
+  //   }
+
+  //   if (username.trim().length > 0 && username.trim().length < 3) {
+  //     showError(null, null, false, "Username must be at least 3 characters");
+  //     return false;
+  //   }
+
+  //   if (password.length > 0 && password.length < 8) {
+  //     showError(null, null, false, "Password must be at least 8 characters");
+  //     return false;
+  //   }
+
+  //   if (confirmPassword.length > 0 && password !== confirmPassword) {
+  //     showError(
+  //       null,
+  //       null,
+  //       false,
+  //       "Password and Confirm Password didn't match"
+  //     );
+  //     return false;
+  //   }
+
+  //   return true;
+  // }, [userDetails]);
+
   const checkEmptyFields = useCallback(() => {
-    const { role, username, password, confirmPassword } = userDetails;
+    const {
+      username,
+      role,
+      mobile,
+      subcategory,
+      region, // state
+      password,
+      confirmPassword,
+    } = userDetails;
 
-    for (const key in userDetails) {
-      const value = userDetails[key];
+    const showError = (message) => {
+      Toast.error(message, {
+        duration: 3000,
+        position: "top",
+      });
+    };
 
-      // ✅ skip optional fields
-      if (["lat", "lon"].includes(key)) continue;
+    // ✅ USERNAME
+    if (!username?.trim()) {
+      showError("Username is required");
+      return false;
+    }
 
-      if (typeof value === "string" && !value.trim()) {
-        if (
-          (role === "recruiter" &&
-            !["password", "confirmPassword"].includes(key)) ||
-          (userDetails.country.toLowerCase().trim() !== "india" &&
-            !userDetails.city)
-        )
-          continue;
+    if (username.trim().length < 3) {
+      showError("Username must be at least 3 characters");
+      return false;
+    }
 
-        showError(key);
+    // ✅ MOBILE
+    if (!mobile?.number?.trim()) {
+      showError("Mobile number is required");
+      return false;
+    }
+
+    // ✅ PASSWORD
+    if (!password?.trim()) {
+      showError("Password is required");
+      return false;
+    }
+
+    if (password.trim().length < 8) {
+      showError("Password must be at least 8 characters");
+      return false;
+    }
+
+    if (!confirmPassword?.trim()) {
+      showError("Confirm password is required");
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      showError("Passwords do not match");
+      return false;
+    }
+
+    // 🔥 MECHANIC VALIDATION
+    if (role === "mechanic") {
+      // ✅ ORDER: State → District → Street → Pincode
+
+      if (!region?.trim()) {
+        showError("State is required");
         return false;
       }
 
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        for (const innerKey in value) {
-          const innerValue = value[innerKey];
-
-          if (typeof innerValue === "string" && !innerValue.trim()) {
-            if (
-              role === "recruiter" &&
-              key !== "mobile" &&
-              !["number", "countryCode"].includes(innerKey)
-            )
-              continue;
-
-            showError(innerKey, key);
-            return false;
-          }
-        }
+      if (!userDetails?.city?.toString().trim()) {
+        showError("City is required");
+        return false;
       }
 
-      if (role === "mechanic" && Array.isArray(value)) {
-        if (value.some((val) => typeof val === "string" && !val.trim())) {
-          showError(key, null, true);
+      if (!userDetails?.street?.toString().trim()) {
+        showError("Street is required");
+        return false;
+      }
+
+      if (!userDetails?.pincode?.toString().trim()) {
+        showError("Pincode is required");
+        return false;
+      }
+
+      // ✅ OTHER REQUIRED FIELDS
+      if (!userDetails?.industry?.toString().trim()) {
+        showError("Industry is required");
+        return false;
+      }
+
+      if (!userDetails?.organization?.toString().trim()) {
+        showError("Organization is required");
+        return false;
+      }
+
+      // ✅ SUBCATEGORY
+      if (!Array.isArray(subcategory) || subcategory.length === 0) {
+        showError("Category is required");
+        return false;
+      }
+
+      for (let i = 0; i < subcategory.length; i++) {
+        const sub = subcategory[i];
+
+        if (!sub?.name?.trim()) {
+          showError("Category is required");
+          return false;
+        }
+
+        const hasValidSubServices =
+          Array.isArray(sub.services) &&
+          sub.services.some(
+            (s) => typeof s === "string" && s.trim().length > 0,
+          );
+
+        if (!hasValidSubServices) {
+          showError("Subcategory is required");
           return false;
         }
       }
     }
 
-    if (username.trim().length > 0 && username.trim().length < 3) {
-      showError(null, null, false, "Username must be at least 3 characters");
-      return false;
-    }
-
-    if (password.length > 0 && password.length < 8) {
-      showError(null, null, false, "Password must be at least 8 characters");
-      return false;
-    }
-
-    if (confirmPassword.length > 0 && password !== confirmPassword) {
-      showError(
-        null,
-        null,
-        false,
-        "Password and Confirm Password didn't match"
-      );
-      return false;
-    }
-
     return true;
   }, [userDetails]);
-
   const showError = useCallback(
     (field, parent = null, isArray = false, customMsg = null) => {
       Toast.error(
@@ -152,21 +273,21 @@ const SignUp = () => {
           (parent
             ? `${field} is required in ${parent}.`
             : isArray
-            ? `${field} has empty values.`
-            : `${field} is required.`),
+              ? `${field} has empty values.`
+              : `${field} is required.`),
         {
           duration: 3000,
           position: "top",
-        }
+        },
       );
     },
-    []
+    [],
   );
   const fetchCoordinatesWeb = async (address) => {
     const res = await fetch(
       `https://api.machinestreets.com/api/geocode?address=${encodeURIComponent(
-        address
-      )}`
+        address,
+      )}`,
     );
     const data = await res.json();
 
@@ -230,7 +351,7 @@ const SignUp = () => {
           page: "signup",
         },
         "application/json",
-        { secure: false }
+        { secure: false },
       );
 
       if (result.status === 200) {
@@ -255,10 +376,10 @@ const SignUp = () => {
           userDetails,
         },
         "application/json",
-        { secure: false }
+        { secure: false },
       );
 
-      if (result.status === 200 || 201) {
+      if (result && (result.status === 200 || result.status === 201)) {
         // setShowWelcome(true);
         if (Platform.OS !== "web") {
           await SecureStore.setItemAsync("token", result?.data?.token);
@@ -291,6 +412,7 @@ const SignUp = () => {
           paddingVertical: 20,
         }}
       >
+        <AppToast />
         {status !== "granted" && Platform.OS !== "web" ? (
           <PermissionModal />
         ) : null}
@@ -341,16 +463,16 @@ const SignUp = () => {
                     {userDetails?.role === "mechanic"
                       ? "🚀 Grow Your Business"
                       : userDetails?.role === "recruiter"
-                      ? "🔍 Find the Right Talent"
-                      : "✨ Let’s Get Started"}
+                        ? "🔍 Find the Right Talent"
+                        : "✨ Let’s Get Started"}
                   </Text>
 
                   <Text className="text-lg font-medium text-gray-600 text-center leading-relaxed">
                     {userDetails?.role === "mechanic"
                       ? "Expand your reach, manage clients with ease, and boost your success."
                       : userDetails?.role === "recruiter"
-                      ? "Connect with skilled mechanics faster and simplify your hiring process."
-                      : "Explore all the tools you need to achieve your goals today."}
+                        ? "Connect with skilled mechanics faster and simplify your hiring process."
+                        : "Explore all the tools you need to achieve your goals today."}
                   </Text>
                 </FadeSlideView>
               </View>

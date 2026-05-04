@@ -10,8 +10,10 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import ReviewModal from "./ReviewModal";
 import Rating from "./Rating";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppToast from "@/components/Toast";
 
 const Modal_R = ({
+  userId,
   isDesktop,
   isTablet,
   height,
@@ -38,6 +40,7 @@ const Modal_R = ({
           justifyContent: "flex-end",
         }}
       >
+        <AppToast />
         <View
           style={{
             flex: 1,
@@ -107,6 +110,7 @@ const Modal_R = ({
                 selectedMechanic={selectedMechanic}
                 height={height}
                 width={width}
+                userId={userId}
               />
             </View>
           )}

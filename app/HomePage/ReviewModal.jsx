@@ -6,11 +6,11 @@ import { FlatList, Image, Pressable, Text, View } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import noreviews from "../../assets/animations/no_reviews.json";
 
-const ReviewModal = ({ selectedMechanic, setReviewModal }) => {
+const ReviewModal = ({ selectedMechanic, setReviewModal, userId }) => {
   const { formatTime } = useContext(FormatTime);
 
   const reviews = selectedMechanic?.reviews || [];
-  console.log('reviews :', selectedMechanic)
+
   return (
     <View className="flex-1 mt-2">
       {reviews.length === 0 ? (
@@ -79,12 +79,16 @@ const ReviewModal = ({ selectedMechanic, setReviewModal }) => {
       )}
 
       {/* Add Review Button */}
-      <Pressable
-        onPress={() => setReviewModal("write")}
-        className="w-full h-12 bg-gray-100 rounded-lg justify-center items-center mb-2"
-      >
-        <Text className="text-center font-semibold text-base">Add Review</Text>
-      </Pressable>
+      {userId !== selectedMechanic?._id?.toString() && (
+        <Pressable
+          onPress={() => setReviewModal("write")}
+          className="w-full h-12 bg-gray-100 rounded-lg justify-center items-center mb-2"
+        >
+          <Text className="text-center font-semibold text-base">
+            Add Review
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 };

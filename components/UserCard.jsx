@@ -14,6 +14,7 @@ const UserCard = ({
   setSelectedMechanic,
   setReviewModal,
   setReview,
+  userId,
 }) => {
   // Encrypt
   const encrypted = CryptoJS.AES.encrypt(
@@ -32,6 +33,10 @@ const UserCard = ({
   const fullAddress = `${mechanic?.street || ""}, ${mechanic?.city || ""}, ${
     mechanic?.region || ""
   } - ${mechanic?.pincode || ""}, ${mechanic?.country || ""}`;
+
+  const hasValidServices =
+    Array.isArray(mechanic?.services) &&
+    mechanic.services.some((s) => typeof s === "string" && s.trim().length > 0);
   return (
     <Pressable
       onPress={() => {
@@ -174,11 +179,12 @@ const UserCard = ({
         )}
 
         {/* Specialization */}
-        {mechanic?.services?.length > 0 && (
+        {hasValidServices && (
           <>
             <Text className="font-bold mt-5 mb-2 text-gray-800">
               Specialization
             </Text>
+
             <View className="bg-gray-100 p-2 rounded-lg">
               {isDesktop ? (
                 <Text
@@ -186,20 +192,25 @@ const UserCard = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {mechanic.services?.[0]}
+                  {mechanic.services.find(
+                    (s) => typeof s === "string" && s.trim().length > 0,
+                  )}
                 </Text>
               ) : (
-                mechanic.services?.slice(0, 3).map((service, index) => (
-                  <Text
-                    key={index}
-                    className="text-gray-700 text-sm mt-2"
-                    numberOfLines={3}
-                    ellipsizeMode="tail"
-                    style={{ flexShrink: 1, flexWrap: "wrap" }}
-                  >
-                    {service}
-                  </Text>
-                ))
+                mechanic.services
+                  .filter((s) => typeof s === "string" && s.trim().length > 0)
+                  .slice(0, 3)
+                  .map((service, index) => (
+                    <Text
+                      key={index}
+                      className="text-gray-700 text-sm mt-2"
+                      numberOfLines={3}
+                      ellipsizeMode="tail"
+                      style={{ flexShrink: 1, flexWrap: "wrap" }}
+                    >
+                      {service}
+                    </Text>
+                  ))
               )}
             </View>
           </>
@@ -242,8 +253,8 @@ const UserCard = ({
           )}
         </View>
 
-        {/* Ratings / Reviews */}
-        <View className="flex-row items-center gap-6 mt-6">
+        {/* 🔽 Bottom section */}
+        <View className="flex-row items-center gap-6 mt-auto pt-4">
           {mechanic?.averageRating ? (
             <>
               <View className="bg-green-600 px-3 py-1 rounded-lg flex-row items-center">
@@ -252,6 +263,7 @@ const UserCard = ({
                 </Text>
                 <FontAwesome name="star" size={14} color="white" />
               </View>
+
               <Pressable
                 onPress={() => {
                   setSelectedMechanic(mechanic);
@@ -267,17 +279,20 @@ const UserCard = ({
           ) : (
             <View className="flex-row items-center justify-between w-full">
               <Text className="text-gray-500 text-base">No Reviews Yet</Text>
-              <Pressable
-                onPress={() => {
-                  setSelectedMechanic(mechanic);
-                  setReview((prev) => ({ ...prev, userId: mechanic?._id }));
-                  setReviewModal("write");
-                }}
-              >
-                <Text className="text-blue-500 underline font-medium text-base">
-                  Add yours
-                </Text>
-              </Pressable>
+
+              {userId !== mechanic?._id?.toString() && (
+                <Pressable
+                  onPress={() => {
+                    setSelectedMechanic(mechanic);
+                    setReview((prev) => ({ ...prev, userId: mechanic?._id }));
+                    setReviewModal("write");
+                  }}
+                >
+                  <Text className="text-blue-500 underline font-medium text-base">
+                    Add yours
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )}
         </View>

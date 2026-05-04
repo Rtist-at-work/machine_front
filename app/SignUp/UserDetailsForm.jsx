@@ -53,7 +53,6 @@ const UserDetailsForm = ({
           "application/json",
           { secure: false }
         );
-        console.log("data :", data);
         if (data.status === 200) {
           setIndustrySuggestion(data?.data?.industries);
           setStates(data?.data?.states[1]?.districts);
@@ -392,7 +391,6 @@ const UserDetailsForm = ({
             if (userDetails.role === "mechanic") {
               const address = `${userDetails.city}, ${userDetails.region}, ${userDetails.pincode}, ${userDetails.country}`;
               const coords = await fetchGeocodes(address); // get lat/lon
-              console.log("coords :", coords);
               data = {
                 ...data,
                 lat: coords?.latitude,

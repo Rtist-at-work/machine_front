@@ -1,14 +1,27 @@
+// child compoenents
+import ProfilePageHeader from "../Profile/ProfilePageHeader";
+import UserDetails from "../Profile/UserDetails";
+import PostGrid from "../Profile/PostGrid";
+import postsAnimation from "../../assets/animations/posts.json";
+
+// Modals
+import FollowersModal from "../Profile/FollowersModal";
+import PostViewerModal from "../Profile/PostViewerModal";
+import UploadPopUp from "../Profile/UploadPopUp";
+import Settings from "../Profile/Settings";
+import ResetPassword from "../Profile/ResetPassword";
+import UserDetailsForm from "../SignUp/UserDetailsForm";
 import CardSlider from "@/components/CardSlider";
-import Loading from "@/components/Loading";
+
+// context
 import { useAppContext } from "@/context/AppContext";
 import { useFileUploadContext } from "@/context/FileUpload";
+
+// hooks
 import useApi from "@/hooks/useApi";
 import useScreenWidth from "@/hooks/useScreenWidth";
-import { Feather } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
-import LottieView from "lottie-react-native";
-import { useCallback, useEffect, useState } from "react";
+
+// react native
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,24 +34,29 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import CryptoJS from "react-native-crypto-js";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Toast } from "toastify-react-native";
-import postsAnimation from "../../assets/animations/posts.json";
-import PostGrid from "../Profile/PostGrid";
-import PostViewerModal from "../Profile/PostViewerModal";
-import ProfilePageHeader from "../Profile/ProfilePageHeader";
-import ResetPassword from "../Profile/ResetPassword";
-import Settings from "../Profile/Settings";
-import UploadPopUp from "../Profile/UploadPopUp";
-import UserDetails from "../Profile/UserDetails";
-import UserDetailsForm from "../SignUp/UserDetailsForm";
-import FollowersModal from "../Profile/FollowersModal";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
+import LottieView from "lottie-react-native";
 
-export default function Profile() {
+// react
+import { useCallback, useEffect, useState } from "react";
+import CryptoJS from "react-native-crypto-js";
+
+// icon and others
+import Loading from "@/components/Loading";
+import { Feather } from "@expo/vector-icons";
+
+// toast
+import { Toast } from "toastify-react-native";
+import AppToast from "@/components/Toast";
+
+const ProfilePage = () => {
+  // context
+  const { upload, media, setMedia } = useFileUploadContext();
   const {
     selectedMechanic,
     setSelectedMechanic,
@@ -46,35 +64,37 @@ export default function Profile() {
     startLoading,
     stopLoading,
   } = useAppContext();
+
+  // hooks
   const { postJsonApi, patchApi, getJsonApi, deleteApi } = useApi();
-  const { upload, media, setMedia } = useFileUploadContext();
   const { width, isDesktop, isMobile, height } = useScreenWidth();
-  const [tempMech, setTempMech] = useState(selectedMechanic);
-  const { id, type, post } = useLocalSearchParams();
-  const [displayLoader, setDisplayLoader] = useState(true);
+
+  // follow states
   const [follow, setFollow] = useState("Follow");
   const [followingList, setFollowingList] = useState(null);
   const [followingModal, setFollowingModal] = useState(false);
 
+  // post states
   const [uploadType, setUploadType] = useState("");
   const [description, setDescription] = useState("");
-  const [modal, setModal] = useState("");
   const [postModal, setPostModal] = useState(null);
+  const [clicked, setClicked] = useState(false);
+
+  // common states
   const [comment, setComment] = useState({ comment: "", userId: null });
 
-  let decrypted = null;
-  if (type) {
-    const bytes = CryptoJS.AES.decrypt(type, "f9b7nvctr72942chh39h9rc");
-    decrypted = bytes.toString(CryptoJS.enc.Utf8);
-  }
+  // loading state
+  const [displayLoader, setDisplayLoader] = useState(true);
 
-  useEffect(() => {
-    setComment((prev) => ({ ...prev, userId: userId }));
-  }, [userId]);
-
-  const insets = useSafeAreaInsets();
-
+  // modal
+  const [modal, setModal] = useState("");
   const [viewType, setViewType] = useState("user"); // "posts" | "blogs"
+
+  // others
+  const [tempMech, setTempMech] = useState(selectedMechanic);
+  const { id, type, post } = useLocalSearchParams();
+  let decrypted = null;
+  const insets = useSafeAreaInsets();
   const sections = [
     {
       title: "profile",
@@ -84,43 +104,18 @@ export default function Profile() {
           : [{ id: "placeholder" }],
     },
   ];
-  
-  // get selectedMechnic details
 
-  const getMechanic = async () => {
-    try {
-      const user =
-        Platform.OS === "web" ? id : decrypted === "user_visit" ? id : userId;
-      const result = await getJsonApi(
-        `api/getSelectedMechanic/${user}`,
-        "application/json",
-        { secure: true },
-      );
-      console.log('id :', id)
-      if (result.status === 200) {
-        setSelectedMechanic(result?.data);
-        setTempMech(result?.data);
-        console.log('tm :', tempMech)
-        console.log('sm :', selectedMechanic)
-        if (decrypted === "user_visit")
-          setFollow(() =>
-            result?.data?.following.includes(userId) ? "Following" : "Follow",
-          );
+  if (type) {
+    const bytes = CryptoJS.AES.decrypt(type, "f9b7nvctr72942chh39h9rc");
+    decrypted = bytes.toString(CryptoJS.enc.Utf8);
+  }
 
-        if (post) {
-          const po = result?.data?.posts || [];
-          const index = po.findIndex((p) => p._id === post); // ✅ find the index
-          if (index !== -1) {
-            setPostModal(index); // ✅ set index if found
-          }
-        }
-      }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setDisplayLoader(false);
-    }
-  };
+  // ========== useEffects =========
+
+  // updating comment state
+  useEffect(() => {
+    setComment((prev) => ({ ...prev, userId: userId }));
+  }, [userId]);
 
   // Refresh every time screen is focused
   useFocusEffect(
@@ -139,73 +134,20 @@ export default function Profile() {
     }, []),
   );
 
-  // media upload
-  const handleMediaupload = async () => {
-    if (!media || media.length === 0 || media?.canceled) return;
-
-    const formData = new FormData();
-    if (uploadType === "posts") formData.append("description", description);
-    formData.append("type", uploadType);
-
-    await Promise.all(
-      media.map(async (asset) => {
-        let file;
-        if (Platform.OS === "web") {
-          const blob = await (await fetch(asset.uri)).blob();
-          file = new File([blob], asset.fileName || "file.jpg", {
-            type: asset.mimeType || blob.type || "image/jpeg",
-          });
-        } else {
-          file = {
-            uri: asset.uri,
-            name: asset.fileName || asset.uri.split("/").pop(),
-            type:
-              asset.mimeType ||
-              `${asset.type}/${asset.uri.split(".").pop() || "jpeg"}`,
-          };
-        }
-        formData.append("media", file);
-        
-      }),
-    );
-
-    const res = await postJsonApi(
-      "api/postUpload",
-      formData,
-      Platform.OS === "web" ? undefined : "multipart/form-data",
-      { secure: true },
-    );
-    if (res?.status === 200) {
-      setDescription("");
-      setMedia([]);
-      setViewType(viewType === "plus-square" ? "grid" : "user");
-    }
-  };
-
+  // hanlde media upload trigger
   useEffect(() => {
-    if (media.length > 0 && uploadType !== "posts") {
+    console.log('media.length > 0 && uploadType !== "posts" :', uploadType);
+    if (
+      media.length > 0 &&
+      (uploadType === "banner" || uploadType === "profileImage")
+    ) {
       handleMediaupload();
     }
   }, [media]);
 
-  // password reset
-  const handlePasswordReset = useCallback(async (password) => {
-    try {
-      const result = await patchApi(
-        "api/passwordReset",
-        { password, page: "profile" },
-        "application/json",
-        { secure: true },
-      );
-      if (result.status === 200) {
-        setViewType("user");
-        setModal("settings");
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+  // ========== Non-Api functions
 
+  // web geocords
   const fetchCoordinatesWeb = async (address) => {
     const res = await fetch(
       `https://api.machinestreets.com/api/geocode?address=${encodeURIComponent(
@@ -223,7 +165,7 @@ export default function Profile() {
     return null;
   };
 
-  // Main function
+  // fetch geocodes
   const fetchGeocodes = useCallback(async (address) => {
     startLoading();
 
@@ -266,114 +208,104 @@ export default function Profile() {
 
   // Validation check
   const checkEmptyFields = useCallback((userDetails) => {
-    const { username } = userDetails;
+    const {
+      username,
+      role,
+      mobile,
+      subcategory,
+      region, // state
+    } = userDetails;
 
-    // Fields to skip (optional)
-    const optionalFields = ["lat", "lon", "bio"];
-
-    // Map nested keys to friendly labels
-    const fieldLabels = {
-      name: "category",
-      services: "subcategory",
-    };
-
-    // Show toast error
-    const showError = (field, parent = null) => {
-      const label = field || fieldLabels[field];
-      const message = parent
-        ? `${parent} is required for ${label}`
-        : `${label} is required`;
-
+    const showError = (message) => {
       Toast.error(message, {
         duration: 3000,
         position: "top",
       });
     };
-    console.log("opt :", optionalFields);
-    // Recursive check for empty values
-    const isEmpty = (value, key, parent = null) => {
-      if (optionalFields.includes(key)) return false; // skip optional fields
-      console.log("lk :", value, key);
-      if (typeof value === "string") {
-        if (!value.trim()) {
-          showError(key, parent);
-          return true;
-        }
+
+    // ✅ USERNAME
+    if (!username?.trim()) {
+      showError("Username is required");
+      return false;
+    }
+
+    if (username.trim().length < 3) {
+      showError("Username must be at least 3 characters");
+      return false;
+    }
+
+    // ✅ MOBILE
+    if (!mobile?.number?.trim()) {
+      showError("Mobile number is required");
+      return false;
+    }
+
+    // 🔥 MECHANIC VALIDATION
+    if (role === "mechanic") {
+      // ✅ ORDER: State → District → Street → Pincode
+
+      if (!region?.trim()) {
+        showError("State is required");
         return false;
       }
 
-      if (Array.isArray(value)) {
-        for (let i = 0; i < value.length; i++) {
-          if (isEmpty(value[i], key, parent)) return true;
-        }
+      if (!userDetails?.city?.toString().trim()) {
+        showError("District is required");
+        return false;
       }
 
-      if (typeof value === "object" && value !== null) {
-        for (const innerKey in value) {
-          if (isEmpty(value[innerKey], innerKey, key)) return true;
-        }
+      if (!userDetails?.street?.toString().trim()) {
+        showError("Street is required");
+        return false;
       }
 
-      return false;
-    };
+      if (!userDetails?.pincode?.toString().trim()) {
+        showError("Pincode is required");
+        return false;
+      }
 
-    // Iterate over top-level userDetails
-    for (const key in userDetails) {
-      if (optionalFields.includes(key)) continue;
+      // ✅ OTHER FIELDS (kept from your original logic)
+      if (!userDetails?.industry?.toString().trim()) {
+        showError("Industry is required");
+        return false;
+      }
 
-      if (isEmpty(userDetails[key], key)) return false;
-    }
+      if (!userDetails?.organization?.toString().trim()) {
+        showError("Organization is required");
+        return false;
+      }
 
-    // Specific username validation
-    if (username.trim().length > 0 && username.trim().length < 3) {
-      Toast.error("Username must be at least 3 characters", {
-        duration: 3000,
-        position: "top",
-      });
-      return false;
+      // ✅ SUBCATEGORY
+      if (!Array.isArray(subcategory) || subcategory.length === 0) {
+        showError("Category is required");
+        return false;
+      }
+
+      for (let i = 0; i < subcategory.length; i++) {
+        const sub = subcategory[i];
+
+        if (!sub?.name?.trim()) {
+          showError("Category is required");
+          return false;
+        }
+
+        const hasValidSubServices =
+          Array.isArray(sub.services) &&
+          sub.services.some(
+            (s) => typeof s === "string" && s.trim().length > 0,
+          );
+
+        if (!hasValidSubServices) {
+          showError("Subcategory is required");
+          return false;
+        }
+      }
     }
 
     return true;
   }, []);
 
-  // userDetails updation
-  const hanldeUpdate = useCallback(async (userDetails) => {
-    if (!checkEmptyFields(userDetails)) {
-      stopLoading();
-      return;
-    }
-    try {
-      const result = await patchApi(
-        "api/userDetailsUpdate",
-        { userDetails },
-        "application/json",
-        { secure: true },
-      );
-      if (result.status === 200) {
-        setSelectedMechanic(result?.data?.userDetails);
-        setViewType("user");
-        setModal("");
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
-
-  // share user
-  // const shareProfile = useCallback(async () => {
-  //   try {
-  //     const profileId = id;
-
-  //     const url = `https://api.machinestreets.com/Profile?id=${profileId}&type=user_visit`;
-
-  //     await Share.share({
-  //       message: `Check out this profile in MachineStreets: ${url}`,
-  //     });
-  //   } catch (error) {
-  //     console.log("Error sharing profile:", error.message);
-  //   }
-  // }, [id]);
-
+  // share function
   const share = useCallback(
     async (post) => {
       try {
@@ -407,7 +339,7 @@ export default function Profile() {
     },
     [id, userId],
   );
-
+  //header tab icon click
   const handleIconClick = useCallback(async (name) => {
     setViewType(name);
     if (name === "credit-card") setModal("credit-card");
@@ -417,6 +349,127 @@ export default function Profile() {
     }
     if (name === "share") {
       share();
+    }
+  }, []);
+
+  // ========== Api FUnctions ======
+
+  // get selectedMechnic details
+  const getMechanic = async () => {
+    try {
+      const user =
+        Platform.OS === "web" ? id : decrypted === "user_visit" ? id : userId;
+      const result = await getJsonApi(
+        `api/getSelectedMechanic/${user}`,
+        "application/json",
+        { secure: true },
+      );
+      if (result.status === 200) {
+        setSelectedMechanic(result?.data);
+        setTempMech(result?.data);
+
+        if (decrypted === "user_visit")
+          setFollow(() =>
+            result?.data?.following.includes(userId) ? "Following" : "Follow",
+          );
+
+        if (post) {
+          const po = result?.data?.posts || [];
+          const index = po.findIndex((p) => p._id === post); // ✅ find the index
+          if (index !== -1) {
+            setPostModal(index); // ✅ set index if found
+          }
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setDisplayLoader(false);
+    }
+  };
+
+  // media upload
+  const handleMediaupload = async () => {
+    if (!media || media.length === 0 || media?.canceled) return;
+
+    const formData = new FormData();
+    if (uploadType === "posts") formData.append("description", description);
+    formData.append("type", uploadType);
+
+    await Promise.all(
+      media.map(async (asset) => {
+        let file;
+        if (Platform.OS === "web") {
+          const blob = await (await fetch(asset.uri)).blob();
+          file = new File([blob], asset.fileName || "file.jpg", {
+            type: asset.mimeType || blob.type || "image/jpeg",
+          });
+        } else {
+          file = {
+            uri: asset.uri,
+            name: asset.fileName || asset.uri.split("/").pop(),
+            type:
+              asset.mimeType ||
+              `${asset.type}/${asset.uri.split(".").pop() || "jpeg"}`,
+          };
+        }
+        formData.append("media", file);
+      }),
+    );
+    // post Upoad
+    const res = await postJsonApi(
+      "api/postUpload",
+      formData,
+      Platform.OS === "web" ? undefined : "multipart/form-data",
+      { secure: true },
+    );
+    if (res?.status === 200) {
+      setDescription("");
+      setMedia([]);
+      setViewType(viewType === "plus-square" ? "grid" : "user");
+    }
+  };
+
+  // pasword reset
+
+  // password reset
+  const handlePasswordReset = useCallback(async (password) => {
+    try {
+      const result = await patchApi(
+        "api/passwordReset",
+        { password, page: "profile" },
+        "application/json",
+        { secure: true },
+      );
+      if (result.status === 200) {
+        setViewType("user");
+        setModal("settings");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
+  // userDetails updation
+  const hanldeUpdate = useCallback(async (userDetails) => {
+    if (!checkEmptyFields(userDetails)) {
+      stopLoading();
+      return;
+    }
+    try {
+      const result = await patchApi(
+        "api/userDetailsUpdate",
+        { userDetails },
+        "application/json",
+        { secure: true },
+      );
+      if (result.status === 200) {
+        setSelectedMechanic(result?.data?.userDetails);
+        setViewType("user");
+        setModal("");
+      }
+    } catch (err) {
+      console.log(err);
     }
   }, []);
 
@@ -434,8 +487,8 @@ export default function Profile() {
       console.log(err);
     }
   }, []);
-  // delete api
 
+  // delete api
   const postDelete = useCallback(async (postId) => {
     try {
       const result = await deleteApi(
@@ -444,7 +497,6 @@ export default function Profile() {
         "application/json",
         { secure: true },
       );
-      console.log(result);
       if (result?.status === 200) {
         setSelectedMechanic((prev) => {
           const newPosts = prev.posts.filter((post) => post._id !== postId);
@@ -464,7 +516,6 @@ export default function Profile() {
   }, []);
 
   // follow request api
-
   const followRequest = async (id) => {
     const mechId = id ? id : selectedMechanic?._id;
     try {
@@ -474,7 +525,7 @@ export default function Profile() {
         "application/json",
         { secure: true },
       );
-      console.log("result :", result);
+
       if (result.status === 200) {
         const isFollowing = result.data.mechanic.followers.includes(userId);
 
@@ -510,7 +561,7 @@ export default function Profile() {
       console.error("Follow request failed:", err);
     }
   };
-  console.log("sm :", selectedMechanic);
+
   // fetch followers
   const fetchFollwers = async () => {
     const result = await getJsonApi("api/getFollowers", "application/json", {
@@ -518,6 +569,7 @@ export default function Profile() {
     });
     if (result.status === 200 || 201) setFollowingList(result.data || []);
   };
+
   return (
     <SafeAreaView
       style={{
@@ -525,33 +577,10 @@ export default function Profile() {
       }}
       edges={["top", "left", "right"]} // ignore bottom to let tab bar handle it
     >
-      {/* <Image
-        source={{
-          uri: `https://api.machinestreets.com/api/mediaDownload/${selectedMechanic?.businessCards[1]}`,
-        }}
-        style={{ width: "100%", height: "100%" }}
-        resizeMode="cover"
-      /> */}
       {displayLoader ? (
         <Loading />
       ) : (
         <>
-          {/* upload popup */}
-          {media?.length > 0 && viewType === "plus-square" && (
-            <UploadPopUp
-              onRequestClose={() => {
-                setViewType("user");
-                setMedia([]);
-              }}
-              isDesktop={isDesktop}
-              media={media}
-              setMedia={setMedia}
-              description={description}
-              setDescription={setDescription}
-              handleMediaupload={handleMediaupload}
-            />
-          )}
-
           <SectionList
             style={{ flex: 1 }}
             sections={sections}
@@ -664,6 +693,25 @@ export default function Profile() {
               </View>
             )}
           />
+
+          {/* ========== Modals ======= */}
+
+          {/* upload popup */}
+          {media?.length > 0 && viewType === "plus-square" && (
+            <UploadPopUp
+              onRequestClose={() => {
+                setViewType("user");
+                setMedia([]);
+              }}
+              isDesktop={isDesktop}
+              media={media}
+              setMedia={setMedia}
+              description={description}
+              setDescription={setDescription}
+              handleMediaupload={handleMediaupload}
+            />
+          )}
+          {/* follewers */}
           <FollowersModal
             setSelectedMechanic={setSelectedMechanic}
             fetchFollwers={fetchFollwers}
@@ -705,6 +753,7 @@ export default function Profile() {
                 }}
                 edges={["top", "bottom"]}
               >
+                <AppToast />
                 {/* Background close */}
                 <TouchableWithoutFeedback
                   onPress={() => {
@@ -833,7 +882,7 @@ export default function Profile() {
       )}
     </SafeAreaView>
   );
-}
+};
 
 const styles = {
   fullScreen: {
@@ -843,3 +892,5 @@ const styles = {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
 };
+
+export default ProfilePage;

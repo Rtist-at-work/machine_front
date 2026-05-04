@@ -19,6 +19,7 @@ import { router } from "expo-router";
 import Loading from "@/components/Loading";
 import { useAppContext } from "@/context/AppContext";
 import ResetPassword from "./Profile/ResetPassword";
+import AppToast from "@/components/Toast";
 
 const Login = () => {
   const { postJsonApi, patchApi } = useApi();
@@ -33,7 +34,6 @@ const Login = () => {
   });
   const { isLoading } = useAppContext();
 
-  console.log('userDetails outside :', userDetails)
 
   // login form submit
   const Loginbtn = useCallback(async (e) => {
@@ -70,7 +70,6 @@ const Login = () => {
         }, 2000);
       }
     } catch (error) {
-      console.error("Invalid Data:", error);
       Toast.error("Login failed. Please try again.", {
         duration: 2000,
         position: "top",
@@ -89,7 +88,6 @@ const Login = () => {
         "application/json",
         { secure: false }
       );
-      console.log('result :' , result)
       if (result?.status === 200) {
         setStep(0);
         setShowForgot(false);
@@ -127,6 +125,7 @@ const Login = () => {
       style={{ flex: 1 }}
     >
       <SafeAreaView className="flex-1 bg-gray-100 w-screen">
+        <AppToast/>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"

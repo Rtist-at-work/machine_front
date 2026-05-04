@@ -10,7 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "@/context/AppContext";
-
+import AppToast from "@/components/Toast";
 
 export default function TabLayout() {
   const { setUserId } = useAppContext();
@@ -47,60 +47,62 @@ export default function TabLayout() {
   };
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: "#2095A2",
-        tabBarInactiveTintColor: "gray",
-        tabBarHideOnKeyboard: true,
-        tabBarStyle:
-          Platform.OS === "web"
-            ? { display: "none" } // 👈 hide tabs on web
-            : {
-                height: 70 + insets.bottom,
-                paddingBottom: 10 + insets.bottom,
-              },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-          marginTop: 4,
-        },
-        tabBarItemStyle: {
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ focused }) => (
-            <AnimatedIcon name="home" focused={focused} />
-          ),
+    <>
+      <AppToast />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: "#2095A2",
+          tabBarInactiveTintColor: "gray",
+          tabBarHideOnKeyboard: true,
+          tabBarStyle:
+            Platform.OS === "web"
+              ? { display: "none" } // 👈 hide tabs on web
+              : {
+                  height: 70 + insets.bottom,
+                  paddingBottom: 10 + insets.bottom,
+                },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            marginTop: 4,
+          },
+          tabBarItemStyle: {
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          },
         }}
-      />
-      <Tabs.Screen
-        name="HomePage"
-        options={{
-          title: "Mechanics",
-          tabBarIcon: ({ focused }) => (
-            <AnimatedIcon name="cogs" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="Profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ focused }) => (
-            <AnimatedIcon name="user" focused={focused} />
-          ),
-        }}
-        
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ focused }) => (
+              <AnimatedIcon name="home" focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="HomePage"
+          options={{
+            title: "Mechanics",
+            tabBarIcon: ({ focused }) => (
+              <AnimatedIcon name="cogs" focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="Profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ focused }) => (
+              <AnimatedIcon name="user" focused={focused} />
+            ),
+          }}
+        />
+      </Tabs>
+    </>
   );
 }

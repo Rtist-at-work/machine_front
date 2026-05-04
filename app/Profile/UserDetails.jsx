@@ -94,9 +94,9 @@ const UserDetails = ({ userDetails, isMobile, isDesktop }) => {
               >
                 <Text className="text-base font-semibold mb-1">Contact</Text>
                 <Text className="text-md mt-2">
-                  {userDetails?.contact?.countryCode &&
-                  userDetails?.contact?.number
-                    ? `${userDetails.contact.countryCode} ${userDetails.contact.number}`
+                  {userDetails?.mobile?.countryCode &&
+                  userDetails?.mobile?.number
+                    ? `${userDetails.mobile.countryCode} ${userDetails.mobile.number}`
                     : "-Not provided"}
                 </Text>
               </View>

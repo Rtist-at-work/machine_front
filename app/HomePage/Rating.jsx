@@ -106,7 +106,8 @@ const styles = StyleSheet.create({
     padding: 12,
     color: "black",
     borderWidth: 2,
-    borderColor: "#008080",
+    borderColor : "#008080",
+    outlineColor: "#008080",
   },
   animationOverlay: {
     ...StyleSheet.absoluteFillObject,
